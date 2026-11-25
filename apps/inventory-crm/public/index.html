@@ -1,0 +1,2852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="theme-color" content="#0A0A0A" />
+<link rel="manifest" href="/manifest.json" />
+<link rel="icon" type="image/png" href="/assets/app_icon.png" />
+<title>Inventory &amp; CRM</title>
+<style>
+    @font-face {
+        font-family: "Aref Ruqaa";
+        src: url("/assets/fonts/ArefRuqaa-Bold.ttf") format("truetype");
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    @font-face {
+        font-family: "Amiri";
+        src: url("/assets/fonts/Amiri-Regular.ttf") format("truetype");
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+    }
+
+    /* SECURE PIN LOGIN OVERLAY */
+    #pin-login-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 95000;
+        background: radial-gradient(circle at 50% 42%, #171717 0%, #0A0A0A 75%);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+
+    #pin-login-overlay.open { display: flex; }
+
+    .pin-card {
+        background: #FFFFFF;
+        border: 1px solid #CBD5E1;
+        border-radius: 10px;
+        padding: 28px 24px;
+        width: 360px;
+        max-width: 94vw;
+        box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+        text-align: center;
+    }
+
+    .pin-card img {
+        width: 52px;
+        height: 52px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+    }
+
+    .db-meter-track {
+        width: 100%;
+        height: 8px;
+        background: #E2E8F0;
+        border-radius: 999px;
+        overflow: hidden;
+        margin: 8px 0;
+    }
+
+    .db-meter-fill {
+        height: 100%;
+        background: #2563EB;
+        border-radius: 999px;
+        transition: width 0.4s ease;
+    }
+
+        /* ENTERPRISE FAST STARTUP PROGRESS LOADER */
+    #startup-app-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background: radial-gradient(circle at 50% 42%, #0A0A0A 0%, #0A0A0A 75%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        transition: opacity 0.35s ease, visibility 0.35s ease;
+        -webkit-app-region: drag;
+    }
+    #startup-app-loader.fade-out {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+    .loader-emblem {
+        width: 54px;
+        height: 54px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #2563EB 0%, #10B981 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.38);
+    }
+    .loader-title {
+        font-size: 1.35rem;
+        font-weight: 800;
+        color: #F8FAFC;
+        letter-spacing: -0.01em;
+    }
+    .loader-track {
+        width: 240px;
+        height: 4px;
+        background: rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        overflow: hidden;
+    }
+    .loader-bar {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, #3B82F6, #10B981);
+        border-radius: 999px;
+        animation: loaderFill 1.2s ease-out forwards;
+    }
+    .loader-sync-text {
+        font-size: 0.82rem;
+        color: #94A3B8;
+        font-weight: 500;
+    }
+    @keyframes loaderFill {
+        0% { width: 8%; }
+        65% { width: 78%; }
+        100% { width: 100%; }
+    }
+        to { width: 100%; }
+    }
+
+    :root {
+        --base-font-size: 13px;
+        --font-sans: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        --font-mono: "Consolas", "Cascadia Mono", "Courier New", monospace;
+        --bg-app: #F1F5F9;
+        --bg-card: #FFFFFF;
+        --bg-sidebar: #0A0A0A;
+        --bg-sidebar-hover: #171717;
+        --accent: #2563EB;
+        --accent-hover: #1D4ED8;
+        --accent-subtle: #EFF6FF;
+        --text-main: #0A0A0A;
+        --text-secondary: #475569;
+        --text-muted: #64748B;
+        --border: #E2E8F0;
+        --border-strong: #CBD5E1;
+        --green: #15803D;
+        --green-bg: #DCFCE7;
+        --amber: #B45309;
+        --amber-bg: #FEF3C7;
+        --red: #B91C1C;
+        --red-bg: #FEE2E2;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    html {
+        font-size: var(--base-font-size);
+    }
+
+    body {
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        color: var(--text-main);
+        background: var(--bg-app);
+        font-variant-numeric: tabular-nums;
+        user-select: none;
+    }
+
+    /* MAIN APPLICATION SHELL (FULL HEIGHT - NO REDUNDANT TOP LINE) */
+    .app-shell {
+        display: flex;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* DRAGGABLE & COLLAPSIBLE LEFT SIDEBAR */
+    .sidebar {
+        width: 215px;
+        min-width: 56px;
+        max-width: 340px;
+        background: var(--bg-sidebar);
+        color: #E2E8F0;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        position: relative;
+        transition: width 0.08s ease;
+    }
+
+    .sidebar.collapsed {
+        width: 58px !important;
+    }
+
+    .sidebar.collapsed .nav-label,
+    .sidebar.collapsed .shortcut-tag,
+    .sidebar.collapsed .db-text,
+    .sidebar.collapsed .btn-backup-label {
+        display: none !important;
+    }
+
+    .sidebar.collapsed .nav-btn {
+        justify-content: center;
+        padding: 10px 0;
+    }
+
+    .sidebar-top-drag {
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 10px;
+        border-bottom: 1px solid #171717;
+        -webkit-app-region: drag;
+    }
+
+    .btn-collapse-sidebar {
+        -webkit-app-region: no-drag;
+        width: 30px;
+        height: 28px;
+        border-radius: 5px;
+        border: 1px solid #262626;
+        background: #171717;
+        color: #CBD5E1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .btn-collapse-sidebar:hover {
+        background: #262626;
+        color: #FFFFFF;
+    }
+
+    /* DRAG HANDLE TO RESIZE SIDEBAR IN & OUT */
+    .sidebar-resizer {
+        position: absolute;
+        top: 0;
+        right: -3px;
+        width: 6px;
+        height: 100%;
+        cursor: col-resize;
+        z-index: 100;
+        background: transparent;
+        transition: background 0.15s ease;
+    }
+
+    .sidebar-resizer:hover,
+    .sidebar-resizer.dragging {
+        background: var(--accent);
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding: 10px 8px;
+        flex: 1;
+    }
+
+    .nav-btn {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 9px 11px;
+        border-radius: 6px;
+        border: none;
+        background: transparent;
+        color: #94A3B8;
+        font-family: inherit;
+        font-size: 0.96rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-align: left;
+        width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        transition: background 0.12s ease, color 0.12s ease;
+    }
+
+    .nav-btn-left {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        overflow: hidden;
+    }
+
+    .nav-btn svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+        flex-shrink: 0;
+    }
+
+    .nav-btn .shortcut-tag {
+        font-family: var(--font-mono);
+        font-size: 0.78rem;
+        color: #64748B;
+        background: #171717;
+        padding: 1px 5px;
+        border-radius: 3px;
+        margin-left: 6px;
+    }
+
+    .nav-btn:hover {
+        background: var(--bg-sidebar-hover);
+        color: #F8FAFC;
+    }
+
+    .nav-btn.active {
+        background: var(--accent);
+        color: #FFFFFF;
+    }
+
+    .nav-btn.active .shortcut-tag {
+        background: rgba(255, 255, 255, 0.22);
+        color: #FFFFFF;
+    }
+
+    .sidebar-bottom {
+        padding: 10px 8px;
+        border-top: 1px solid #171717;
+        background: #0A0A0A;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .db-badge {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font-size: 0.85rem;
+        color: #4ADE80;
+        font-weight: 600;
+        padding: 2px 4px;
+        white-space: nowrap;
+    }
+
+    .dot-green {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #4ADE80;
+        flex-shrink: 0;
+    }
+
+    /* WORKSPACE */
+    .workspace {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+        min-width: 0;
+    }
+
+    /* INTEGRATED NATIVE WINDOW HEADER BAR (DRAGGABLE) */
+    .topbar {
+        height: 44px;
+        background: var(--bg-card);
+        border-bottom: 1px solid var(--border);
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-shrink: 0;
+    }
+
+    .topbar-title {
+        font-size: 1.12rem;
+        font-weight: 700;
+        color: var(--text-main);
+    }
+
+    .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        -webkit-app-region: no-drag;
+    }
+
+    .content-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px 18px;
+        min-height: 0;
+    }
+
+    .view-pane {
+        display: none;
+        height: 100%;
+    }
+
+    .view-pane.active {
+        display: block;
+    }
+
+    /* CONTROLS */
+    .btn {
+        height: 31px;
+        padding: 0 12px;
+        border-radius: 5px;
+        font-family: inherit;
+        font-size: 0.92rem;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid var(--border-strong);
+        background: #FFFFFF;
+        color: var(--text-main);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+
+    .btn:hover {
+        background: #F8FAFC;
+        border-color: #94A3B8;
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        color: #FFFFFF;
+        border-color: var(--accent);
+    }
+
+    .btn-primary:hover {
+        background: var(--accent-hover);
+        border-color: var(--accent-hover);
+    }
+
+    .btn-dark {
+        background: #0A0A0A;
+        color: #FFFFFF;
+        border-color: #0A0A0A;
+    }
+
+    .btn-dark:hover {
+        background: #171717;
+    }
+
+    .btn-danger {
+        color: #DC2626;
+        border-color: #FECACA;
+        background: #FEF2F2;
+    }
+
+    .btn-danger:hover {
+        background: #DC2626;
+        color: #FFFFFF;
+        border-color: #DC2626;
+    }
+
+    .btn-xs {
+        height: 24px;
+        padding: 0 8px;
+        font-size: 0.84rem;
+    }
+
+    .input, .select {
+        height: 31px;
+        padding: 0 9px;
+        border: 1px solid var(--border-strong);
+        border-radius: 5px;
+        font-family: inherit;
+        font-size: 0.94rem;
+        color: var(--text-main);
+        background: #FFFFFF;
+        outline: none;
+    }
+
+    .input:focus, .select:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+    }
+
+    .mono { font-family: var(--font-mono); }
+    .text-right { text-align: right !important; }
+    .text-center { text-align: center !important; }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 7px;
+        border-radius: 4px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .badge-green { background: var(--green-bg); color: var(--green); }
+    .badge-amber { background: var(--amber-bg); color: var(--amber); }
+    .badge-red { background: var(--red-bg); color: var(--red); }
+    .badge-blue { background: var(--accent-subtle); color: var(--accent); }
+
+    /* PANELS & TABLES */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .kpi-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px 14px;
+    }
+
+    .kpi-label {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+
+    .kpi-val {
+        font-size: 1.55rem;
+        font-weight: 800;
+        color: var(--text-main);
+        margin: 4px 0 2px 0;
+    }
+
+    .kpi-sub {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+
+    .panel {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .panel-header {
+        height: 38px;
+        padding: 0 12px;
+        background: #F8FAFC;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.94rem;
+        font-weight: 700;
+        flex-shrink: 0;
+    }
+
+    .table-wrap {
+        overflow-y: auto;
+        overflow-x: auto;
+        flex: 1;
+    }
+
+    table.data-grid {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.92rem;
+    }
+
+    table.data-grid th {
+        position: sticky;
+        top: 0;
+        background: #F8FAFC;
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 7px 10px;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        white-space: nowrap;
+        z-index: 1;
+    }
+
+    table.data-grid td {
+        padding: 7px 10px;
+        border-bottom: 1px solid #F1F5F9;
+        vertical-align: middle;
+    }
+
+    table.data-grid tr:hover td {
+        background: #F8FAFC;
+    }
+
+    table.data-grid tr.selected-row td {
+        background: var(--accent-subtle);
+    }
+
+    /* POS WORKSTATION */
+    .pos-grid {
+        display: grid;
+        grid-template-columns: 1fr 325px;
+        gap: 12px;
+        height: calc(100vh - 74px);
+    }
+
+    .pos-left {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        min-width: 0;
+        height: 100%;
+    }
+
+    .pos-catalogue {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        height: 210px;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+    }
+
+    .pos-items-grid {
+        padding: 8px 10px;
+        overflow-y: auto;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+        gap: 7px;
+        flex: 1;
+        align-content: start;
+    }
+
+    .item-tile {
+        border: 1px solid var(--border);
+        border-radius: 5px;
+        padding: 7px 9px;
+        background: #FFFFFF;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 4px;
+    }
+
+    .item-tile:hover {
+        border-color: var(--accent);
+        background: var(--accent-subtle);
+    }
+
+    /* EDITABLE POS CHECKOUT PANEL */
+    .pos-checkout-panel {
+        padding: 10px 12px;
+        background: #F8FAFC;
+        border-top: 2px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex-shrink: 0;
+    }
+
+    .checkout-controls-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 8px;
+        align-items: end;
+    }
+
+    .ctrl-box {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+
+    .ctrl-box label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .checkout-summary-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 6px;
+        border-top: 1px solid var(--border);
+        gap: 12px;
+    }
+
+    /* CUSTOMERS 100K SPLIT VIEW */
+    .customers-split {
+        display: grid;
+        grid-template-columns: 1.15fr 0.85fr;
+        gap: 12px;
+        height: calc(100vh - 74px);
+    }
+
+    /* THERMAL RECEIPT */
+    .thermal-container {
+        flex: 1;
+        background: #E2E8F0;
+        padding: 12px;
+        overflow-y: auto;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .thermal-paper {
+        background: #FFFFFF;
+        color: #000000;
+        width: 285px;
+        padding: 14px 12px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        line-height: 1.35;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .thermal-paper.roll-58mm {
+        width: 210px;
+        font-size: 10px;
+    }
+
+    .r-center { text-align: center; }
+    .r-bold { font-weight: 700; }
+    .r-row { display: flex; justify-content: space-between; }
+    .r-line { border-top: 1px dashed #000; margin: 5px 0; }
+    .r-dline { border-top: 2px solid #000; margin: 5px 0; }
+
+    /* MODAL */
+    .modal-bg {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 9000;
+    }
+
+    .modal-bg.open { display: flex; }
+
+    .modal-box {
+        background: #FFFFFF;
+        border: 1px solid var(--border-strong);
+        border-radius: 7px;
+        width: 620px;
+        max-width: 94vw;
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+        overflow: hidden;
+    }
+
+    .form-grid-3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .field label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    .textarea {
+        width: 100%;
+        padding: 8px 9px;
+        border: 1px solid var(--border-strong);
+        border-radius: 5px;
+        font-family: inherit;
+        font-size: 0.92rem;
+        color: var(--text-main);
+        background: #FFFFFF;
+        outline: none;
+        resize: vertical;
+        min-height: 76px;
+    }
+
+    .textarea:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
+    }
+
+    .settings-tabs {
+        display: flex;
+        gap: 6px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 12px;
+        padding-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .settings-tab {
+        height: 32px;
+        padding: 0 14px;
+        border-radius: 5px;
+        border: 1px solid var(--border);
+        background: #FFFFFF;
+        color: var(--text-secondary);
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .settings-tab:hover {
+        background: #F8FAFC;
+        color: var(--text-main);
+    }
+
+    .settings-tab.active {
+        background: var(--accent);
+        color: #FFFFFF;
+        border-color: var(--accent);
+    }
+
+    .settings-tab-pane { display: none; }
+    .settings-tab-pane.active { display: block; }
+
+    .printer-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: 1px solid transparent;
+    }
+
+    .printer-pill.online {
+        background: var(--green-bg);
+        color: var(--green);
+        border-color: #BBF7D0;
+    }
+
+    .printer-pill.offline {
+        background: var(--red-bg);
+        color: var(--red);
+        border-color: #FECACA;
+    }
+
+    .printer-pill.virtual {
+        background: var(--amber-bg);
+        color: var(--amber);
+        border-color: #FDE68A;
+    }
+
+    .toggle-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.92rem;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .toggle-row input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+    }
+
+    @media print {
+        body * { visibility: hidden !important; }
+        #printable-area, #printable-area * { visibility: visible !important; }
+        #printable-area {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            background: #FFF !important;
+            box-shadow: none !important;
+        }
+    }
+
+    /* =========================================================================
+       DEDICATED POS TERMINAL COMMAND BAR & SLIDE-OVER DRAWER (NO SIDEBAR)
+       ========================================================================= */
+    body.interface-pos #app-sidebar {
+        display: none !important;
+    }
+    body.interface-pos .topbar {
+        height: 48px;
+        background: #0A0A0A;
+        color: #F8FAFC;
+        border-bottom: 1px solid #171717;
+    }
+    body.interface-pos .topbar-title {
+        color: #F8FAFC;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .pos-terminal-badge {
+        background: #2563EB;
+        color: #FFFFFF;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        padding: 3px 8px;
+        border-radius: 4px;
+        text-transform: uppercase;
+    }
+    .pos-stat-pill {
+        background: #171717;
+        border: 1px solid #262626;
+        color: #E2E8F0;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 3px 10px;
+        border-radius: 5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .pos-cmd-btn {
+        height: 30px;
+        padding: 0 11px;
+        border-radius: 5px;
+        border: 1px solid #262626;
+        background: #171717;
+        color: #F8FAFC;
+        font-family: inherit;
+        font-size: 0.84rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        -webkit-app-region: no-drag;
+    }
+    .pos-cmd-btn:hover {
+        background: #262626;
+        border-color: #475569;
+    }
+    .pos-cmd-btn-accent {
+        background: #2563EB;
+        border-color: #3B82F6;
+        color: #FFFFFF;
+    }
+    .pos-cmd-btn-accent:hover {
+        background: #1D4ED8;
+    }
+    /* Slide-over POS Settings Drawer */
+    .pos-drawer-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(2px);
+        z-index: 9500;
+        display: none;
+        justify-content: flex-end;
+    }
+    .pos-drawer-backdrop.open {
+        display: flex;
+    }
+    .pos-drawer-panel {
+        width: min(1120px, 94vw);
+        height: 100vh;
+        background: var(--bg-app);
+        border-left: 1px solid var(--border-strong);
+        box-shadow: -16px 0 40px rgba(0, 0, 0, 0.28);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+    .pos-drawer-header {
+        height: 48px;
+        background: #0A0A0A;
+        color: #FFFFFF;
+        padding: 0 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #171717;
+        flex-shrink: 0;
+    }
+    .pos-drawer-body {
+        flex: 1;
+        padding: 14px;
+        overflow-y: auto;
+    }
+    body.interface-pos #view-settings {
+        display: block !important;
+        height: auto !important;
+    }
+
+
+    /* =========================================================================
+       ENTERPRISE COMMERCIAL DESIGN SYSTEM ("5K GRADE" VISUAL CRAFT)
+       ========================================================================= */
+    .panel {
+        border-radius: 10px !important;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.025) !important;
+        border: 1px solid #E2E8F0 !important;
+    }
+    .panel-header {
+        background: linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 100%) !important;
+        border-bottom: 1px solid #E2E8F0 !important;
+        padding: 0 14px !important;
+    }
+    /* Sidebar Brand & Telemetry Polish */
+    .sidebar {
+        background: linear-gradient(180deg, #0A0A0A 0%, #0A0A0A 100%) !important;
+        border-right: 1px solid #171717 !important;
+    }
+    .sidebar-brand-box {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+    }
+    .sidebar-brand-emblem {
+        width: 28px;
+        height: 28px;
+        border-radius: 7px;
+        background: linear-gradient(135deg, #3B82F6 0%, #1D4ED8 100%);
+        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #FFFFFF;
+        flex-shrink: 0;
+    }
+    .sidebar.collapsed .sidebar-brand-box {
+        display: none;
+    }
+    .nav-btn {
+        border-radius: 8px !important;
+        padding: 10px 12px !important;
+        transition: all 0.16s ease !important;
+    }
+    .nav-btn.active {
+        background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%) !important;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35) !important;
+    }
+    .sidebar-telemetry {
+        margin: 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(30, 41, 59, 0.65);
+        border: 1px solid rgba(51, 65, 85, 0.8);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .sidebar.collapsed .sidebar-telemetry span {
+        display: none;
+    }
+    .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #10B981;
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.22);
+        flex-shrink: 0;
+    }
+
+    /* Duotone KPI Cards */
+    .kpi-card {
+        border-radius: 10px !important;
+        padding: 14px 16px !important;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 6px 16px rgba(15, 23, 42, 0.03) !important;
+        border: 1px solid #E2E8F0 !important;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+    }
+    .kpi-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--kpi-accent, #2563EB);
+    }
+    .kpi-icon-tile {
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .kpi-val {
+        font-size: 1.55rem !important;
+        letter-spacing: -0.02em;
+        margin: 4px 0 3px 0 !important;
+    }
+
+    /* POS Category Pill Bar */
+    .cat-pill-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 7px 12px;
+        background: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .cat-pill-bar::-webkit-scrollbar {
+        display: none;
+    }
+    .cat-pill {
+        height: 27px;
+        padding: 0 11px;
+        border-radius: 999px;
+        border: 1px solid #CBD5E1;
+        background: #FFFFFF;
+        color: #475569;
+        font-family: inherit;
+        font-size: 0.81rem;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.14s ease;
+    }
+    .cat-pill:hover {
+        border-color: #94A3B8;
+        color: #0A0A0A;
+    }
+    .cat-pill.active {
+        background: #0A0A0A;
+        color: #FFFFFF;
+        border-color: #0A0A0A;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2);
+    }
+
+    /* Tactile Shopify-POS-Pro Garment Product Cards */
+    .pos-items-grid {
+        grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)) !important;
+        gap: 10px !important;
+        padding: 12px !important;
+        background: #F8FAFC !important;
+    }
+    .item-tile {
+        border-radius: 10px !important;
+        border: 1px solid #E2E8F0 !important;
+        background: #FFFFFF !important;
+        padding: 11px 12px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 7px !important;
+        position: relative;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04) !important;
+        transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease !important;
+    }
+    .item-tile::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--tile-swatch, #2563EB);
+    }
+    .item-tile:hover {
+        transform: translateY(-2px);
+        border-color: #93C5FD !important;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.11) !important;
+    }
+    .tile-sku-chip {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #475569;
+        background: #F1F5F9;
+        border: 1px solid #E2E8F0;
+        padding: 1px 7px;
+        border-radius: 4px;
+    }
+    .tile-variant-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.81rem;
+        color: #475569;
+        flex-wrap: wrap;
+    }
+    .swatch-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: 1px solid rgba(15, 23, 42, 0.25);
+        display: inline-block;
+        flex-shrink: 0;
+    }
+    .tile-size-badge {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+        font-weight: 700;
+        font-size: 0.75rem;
+        padding: 0 6px;
+        border-radius: 4px;
+    }
+    .tile-footer-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid #F1F5F9;
+        padding-top: 7px;
+        margin-top: auto;
+    }
+    .tile-price {
+        font-size: 1.04rem;
+        font-weight: 800;
+        color: #0A0A0A;
+    }
+    .tile-add-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        color: #2563EB;
+        background: #EFF6FF;
+        border: 1px solid #BFDBFE;
+        padding: 3px 8px;
+        border-radius: 6px;
+        transition: all 0.14s ease;
+    }
+    .item-tile:hover .tile-add-pill {
+        background: #2563EB;
+        color: #FFFFFF;
+        border-color: #2563EB;
+    }
+
+    /* Segmented Payment Mode Tiles */
+    .pay-mode-tiles {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 5px;
+    }
+    .pay-tile {
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid #CBD5E1;
+        background: #FFFFFF;
+        color: #262626;
+        font-family: inherit;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: all 0.14s ease;
+    }
+    .pay-tile:hover {
+        background: #F8FAFC;
+        border-color: #94A3B8;
+    }
+    .pay-tile.active {
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border-color: #2563EB;
+        box-shadow: 0 0 0 1px #2563EB;
+    }
+
+    /* Primary Complete Bill CTA Button */
+    .btn-complete-pos {
+        height: 40px !important;
+        padding: 0 20px !important;
+        font-size: 0.96rem !important;
+        font-weight: 700 !important;
+        border-radius: 8px !important;
+        background: linear-gradient(135deg, #059669 0%, #10B981 100%) !important;
+        border: 1px solid #047857 !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 4px 14px rgba(16, 185, 129, 0.32) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+    }
+    .btn-complete-pos:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px rgba(16, 185, 129, 0.42) !important;
+    }
+    .kbd-tag {
+        font-family: var(--font-mono);
+        font-size: 0.71rem;
+        font-weight: 700;
+        padding: 1px 5px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.18);
+        border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+
+    /* Thermal Paper Printer Bezel & Serrated Edge */
+    .thermal-paper {
+        border-top: 6px solid #0A0A0A !important;
+        border-radius: 3px 3px 6px 6px !important;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.16) !important;
+    }
+
+
+    /* Professional Subtle Printer Status Pill */
+    .printer-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        height: auto !important;
+        min-height: 26px !important;
+        padding: 3px 10px !important;
+        line-height: 1.15 !important;
+        border-radius: 6px !important;
+        font-size: 0.76rem !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        width: max-content !important;
+        overflow: visible !important;
+        cursor: pointer !important;
+        border: 1px solid #CBD5E1 !important;
+        background: #F8FAFC !important;
+        color: #262626 !important;
+    }
+    .printer-pill svg {
+        flex-shrink: 0 !important;
+        display: block !important;
+    }
+    .printer-pill span {
+        white-space: nowrap !important;
+        line-height: 1.15 !important;
+    }
+    .printer-pill.online {
+        background: #ECFDF5 !important;
+        border-color: #A7F3D0 !important;
+        color: #047857 !important;
+    }
+    .printer-pill.virtual {
+        background: #F1F5F9 !important;
+        border-color: #CBD5E1 !important;
+        color: #475569 !important;
+    }
+    .printer-pill.offline {
+        background: #FEF2F2 !important;
+        border-color: #FECACA !important;
+        color: #B91C1C !important;
+    }
+    body.interface-pos #view-settings {
+        display: none !important;
+        height: calc(100vh - 74px) !important;
+    }
+    body.interface-pos #view-settings.active {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+
+    /* =========================================================================
+       D-MART ENTERPRISE COUNTER POS + FLOATING TRANSPARENT ERP MENU
+       ========================================================================= */
+    .dmart-pos-layout {
+        display: grid;
+        grid-template-columns: 1fr 370px;
+        gap: 10px;
+        height: calc(100vh - 96px);
+        min-height: 0;
+    }
+    .dmart-left-col {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 0;
+        position: relative;
+    }
+    .dmart-search-bar {
+        background: #FFFFFF;
+        border: 1px solid #CBD5E1;
+        border-radius: 6px;
+        padding: 8px 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+    .dmart-lookup-dropdown {
+        position: absolute;
+        top: 52px;
+        left: 0;
+        right: 0;
+        max-height: 330px;
+        overflow-y: auto;
+        background: #FFFFFF;
+        border: 1px solid #94A3B8;
+        border-radius: 6px;
+        box-shadow: 0 16px 36px rgba(15, 23, 42, 0.22);
+        z-index: 4000;
+        display: none;
+    }
+    .dmart-lookup-dropdown.open {
+        display: block;
+    }
+    .dmart-ledger-panel {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border-radius: 6px !important;
+        border: 1px solid #CBD5E1 !important;
+    }
+    .dmart-right-dock {
+        background: #FFFFFF;
+        border: 1px solid #CBD5E1;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        min-height: 0;
+    }
+    .dmart-dock-section {
+        padding: 10px 12px;
+        border-bottom: 1px solid #E2E8F0;
+    }
+    .dmart-sec-title {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #475569;
+        margin-bottom: 6px;
+    }
+    .dmart-led-box {
+        background: #0A0A0A;
+        color: #FFFFFF;
+        border-radius: 6px;
+        padding: 10px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 8px 0;
+    }
+    .dmart-led-label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        color: #94A3B8;
+        text-transform: uppercase;
+    }
+    .dmart-led-val {
+        font-family: var(--font-mono);
+        font-size: 1.65rem;
+        font-weight: 900;
+        color: #34D399;
+        font-variant-numeric: tabular-nums;
+    }
+    .dmart-fkey-bar {
+        min-height: 34px;
+        height: auto;
+        background: #0A0A0A;
+        color: #CBD5E1;
+        border-top: 1px solid #171717;
+        padding: 4px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.78rem;
+        flex-shrink: 0;
+    }
+    .dmart-fkeys {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+    .dmart-fkeys b {
+        color: #60A5FA;
+        font-family: var(--font-mono);
+    }
+    .printer-pill {
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+        width: max-content !important;
+    }
+    /* Thermal Receipt Blurred Custom Watermark */
+    .thermal-paper {
+        position: relative;
+        overflow: hidden;
+    }
+    .thermal-watermark {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) rotate(-32deg);
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: 0.14em;
+        color: rgba(15, 23, 42, 0.08);
+        filter: blur(1.1px);
+        white-space: nowrap;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+        text-transform: uppercase;
+    }
+    .thermal-content-layer {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* COMPLETELY HIDDEN 0px FLOATING GLASS MENU FOR INVENTORY & CRM */
+    body.interface-erp .app-shell {
+        display: block !important;
+        position: relative;
+    }
+    body.interface-erp .workspace {
+        width: 100% !important;
+        margin-left: 0 !important;
+    }
+    body.interface-erp #app-sidebar {
+        display: none !important;
+        position: fixed !important;
+        top: 48px !important;
+        left: 10px !important;
+        width: 236px !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: calc(100vh - 64px) !important;
+        background: rgba(15, 23, 42, 0.88) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(148, 163, 184, 0.25) !important;
+        border-radius: 10px !important;
+        box-shadow: 0 20px 44px rgba(2, 6, 23, 0.36) !important;
+        z-index: 8500 !important;
+        padding-bottom: 6px !important;
+        overflow: hidden !important;
+    }
+    body.interface-erp #app-sidebar.floating-open {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    body.interface-erp #app-sidebar .sidebar-top-drag,
+    body.interface-erp #app-sidebar .sidebar-telemetry,
+    body.interface-erp #app-sidebar #sidebar-resizer {
+        display: none !important;
+    }
+    body.interface-erp #app-sidebar .sidebar-nav {
+        padding: 8px !important;
+        gap: 3px !important;
+        flex: 0 0 auto !important;
+    }
+    .erp-hamburger-btn {
+        -webkit-app-region: no-drag;
+        width: 32px;
+        height: 30px;
+        border-radius: 6px;
+        border: 1px solid #CBD5E1;
+        background: #F8FAFC;
+        color: #0A0A0A;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+    .erp-hamburger-btn:hover {
+        background: #E2E8F0;
+    }
+
+
+    /* =========================================================================
+       MONOCHROME BLACK & WHITE ENTERPRISE THEME (INVENTORY & CRM)
+       ========================================================================= */
+    body.interface-erp {
+        background: #F7F7F7 !important;
+        color: #0A0A0A !important;
+    }
+    body.interface-erp #startup-app-loader {
+        background: #0A0A0A !important;
+    }
+    body.interface-erp .loader-emblem {
+        background: #FFFFFF !important;
+        box-shadow: 0 8px 28px rgba(255, 255, 255, 0.14) !important;
+    }
+    body.interface-erp .loader-emblem svg {
+        stroke: #0A0A0A !important;
+    }
+    body.interface-erp .loader-bar {
+        background: #FFFFFF !important;
+    }
+    body.interface-erp .topbar {
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #E5E5E5 !important;
+    }
+    body.interface-erp .topbar-title {
+        color: #0A0A0A !important;
+        letter-spacing: -0.02em;
+        font-weight: 800;
+    }
+    body.interface-erp .erp-hamburger-btn {
+        background: #FFFFFF !important;
+        border: 1px solid #D4D4D4 !important;
+        color: #0A0A0A !important;
+        border-radius: 7px !important;
+        transition: all 0.15s ease;
+    }
+    body.interface-erp .erp-hamburger-btn:hover {
+        background: #0A0A0A !important;
+        border-color: #0A0A0A !important;
+        color: #FFFFFF !important;
+    }
+    body.interface-erp #app-sidebar {
+        background: rgba(10, 10, 10, 0.94) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.42) !important;
+    }
+    body.interface-erp .nav-btn {
+        color: #A3A3A3 !important;
+    }
+    body.interface-erp .nav-btn:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: #FFFFFF !important;
+    }
+    body.interface-erp .nav-btn.active {
+        background: #FFFFFF !important;
+        color: #0A0A0A !important;
+        box-shadow: 0 2px 10px rgba(255, 255, 255, 0.18) !important;
+    }
+    body.interface-erp .nav-btn.active svg {
+        stroke: #0A0A0A !important;
+    }
+    body.interface-erp .nav-btn.active .shortcut-tag {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+    }
+    body.interface-erp .panel {
+        background: #FFFFFF !important;
+        border: 1px solid #E5E5E5 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    body.interface-erp .panel-header {
+        background: #FFFFFF !important;
+        border-bottom: 1px solid #E5E5E5 !important;
+        color: #0A0A0A !important;
+        font-weight: 700 !important;
+    }
+    body.interface-erp .kpi-card {
+        background: #FFFFFF !important;
+        border: 1px solid #E5E5E5 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    }
+    body.interface-erp .kpi-card::before {
+        display: none !important;
+    }
+    body.interface-erp .kpi-label {
+        color: #737373 !important;
+        font-size: 0.74rem !important;
+        letter-spacing: 0.05em !important;
+    }
+    body.interface-erp .kpi-val {
+        color: #0A0A0A !important;
+        font-size: 1.6rem !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.03em !important;
+    }
+    body.interface-erp .kpi-sub {
+        color: #525252 !important;
+    }
+    body.interface-erp .kpi-icon-tile {
+        background: #F5F5F5 !important;
+        border: 1px solid #E5E5E5 !important;
+        color: #0A0A0A !important;
+        border-radius: 8px !important;
+    }
+    body.interface-erp .btn {
+        background: #FFFFFF !important;
+        color: #171717 !important;
+        border: 1px solid #D4D4D4 !important;
+        border-radius: 6px !important;
+        transition: all 0.14s ease;
+    }
+    body.interface-erp .btn:hover {
+        background: #F5F5F5 !important;
+        border-color: #0A0A0A !important;
+        color: #0A0A0A !important;
+    }
+    body.interface-erp .btn-primary,
+    body.interface-erp .btn-dark {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border: 1px solid #0A0A0A !important;
+    }
+    body.interface-erp .btn-primary:hover,
+    body.interface-erp .btn-dark:hover {
+        background: #262626 !important;
+        border-color: #262626 !important;
+        color: #FFFFFF !important;
+    }
+    body.interface-erp .btn-danger {
+        background: #FFFFFF !important;
+        color: #171717 !important;
+        border: 1px solid #D4D4D4 !important;
+    }
+    body.interface-erp .btn-danger:hover {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border-color: #0A0A0A !important;
+    }
+    body.interface-erp .input,
+    body.interface-erp .select,
+    body.interface-erp .textarea {
+        background: #FFFFFF !important;
+        border: 1px solid #D4D4D4 !important;
+        color: #0A0A0A !important;
+        border-radius: 6px !important;
+    }
+    body.interface-erp .input:focus,
+    body.interface-erp .select:focus,
+    body.interface-erp .textarea:focus {
+        border-color: #0A0A0A !important;
+        box-shadow: 0 0 0 2px rgba(10, 10, 10, 0.08) !important;
+        outline: none !important;
+    }
+    body.interface-erp .data-grid th {
+        background: #FAFAFA !important;
+        color: #525252 !important;
+        border-bottom: 1px solid #E5E5E5 !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 0.04em !important;
+        text-transform: uppercase !important;
+        padding: 10px 12px !important;
+    }
+    body.interface-erp .data-grid td {
+        border-bottom: 1px solid #F0F0F0 !important;
+        padding: 11px 12px !important;
+        color: #171717 !important;
+    }
+    body.interface-erp .data-grid tbody tr:hover td {
+        background: #F7F7F7 !important;
+    }
+    body.interface-erp .data-grid tbody tr.selected-row td {
+        background: #F0F0F0 !important;
+    }
+    /* Monochrome Badges */
+    body.interface-erp .badge-green,
+    body.interface-erp .badge-blue {
+        background: #F5F5F5 !important;
+        color: #171717 !important;
+        border: 1px solid #D4D4D4 !important;
+    }
+    body.interface-erp .badge-mono-solid {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border: 1px solid #0A0A0A !important;
+    }
+    body.interface-erp .badge-amber,
+    body.interface-erp .badge-red {
+        background: #FFFFFF !important;
+        color: #0A0A0A !important;
+        border: 1.5px solid #0A0A0A !important;
+        font-weight: 800 !important;
+    }
+    body.interface-erp .settings-tabs {
+        border-bottom: 1px solid #E5E5E5 !important;
+        gap: 6px !important;
+    }
+    body.interface-erp .settings-tab {
+        color: #525252 !important;
+        border-radius: 6px !important;
+        border: 1px solid transparent !important;
+    }
+    body.interface-erp .settings-tab:hover {
+        color: #0A0A0A !important;
+        background: #F5F5F5 !important;
+    }
+    body.interface-erp .settings-tab.active {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border-color: #0A0A0A !important;
+    }
+    .mono-search-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+        flex: 1;
+        max-width: 340px;
+    }
+    .mono-search-wrap svg {
+        position: absolute;
+        left: 10px;
+        color: #737373;
+        pointer-events: none;
+    }
+    .mono-search-wrap .input {
+        padding-left: 32px !important;
+        width: 100%;
+    }
+    .stepper-group {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid #D4D4D4;
+        border-radius: 6px;
+        overflow: hidden;
+        background: #FFFFFF;
+    }
+    .stepper-btn {
+        width: 26px;
+        height: 26px;
+        border: none;
+        background: #FFFFFF;
+        color: #0A0A0A;
+        font-weight: 700;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .stepper-btn:hover {
+        background: #0A0A0A;
+        color: #FFFFFF;
+    }
+    .stepper-btn + .stepper-btn {
+        border-left: 1px solid #E5E5E5;
+    }
+
+
+    /* =========================================================================
+       PURE MONOCHROME BLACK & WHITE OVERRIDE (ZERO NAVY-BLUE ANYWHERE)
+       ========================================================================= */
+    #startup-app-loader,
+    #pin-login-overlay {
+        background: #0A0A0A !important;
+    }
+    .loader-emblem {
+        background: #FFFFFF !important;
+        box-shadow: 0 8px 28px rgba(255, 255, 255, 0.14) !important;
+    }
+    .loader-emblem svg {
+        stroke: #0A0A0A !important;
+    }
+    .loader-bar {
+        background: #FFFFFF !important;
+    }
+    body.interface-pos,
+    body.interface-erp {
+        background: #F7F7F7 !important;
+        color: #0A0A0A !important;
+    }
+    body.interface-pos .topbar {
+        background: #FFFFFF !important;
+        color: #0A0A0A !important;
+        border-bottom: 1px solid #E5E5E5 !important;
+    }
+    body.interface-pos .topbar-title {
+        color: #0A0A0A !important;
+        font-weight: 800 !important;
+        letter-spacing: -0.02em;
+    }
+    body.interface-pos .pos-cmd-btn {
+        background: #FFFFFF !important;
+        color: #0A0A0A !important;
+        border: 1px solid #D4D4D4 !important;
+        border-radius: 6px !important;
+        transition: all 0.14s ease;
+    }
+    body.interface-pos .pos-cmd-btn:hover {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border-color: #0A0A0A !important;
+    }
+    body.interface-pos .dmart-fkey-bar {
+        background: #FAFAFA !important;
+        color: #525252 !important;
+        border-top: 1px solid #E5E5E5 !important;
+    }
+    body.interface-pos .dmart-fkeys b {
+        color: #0A0A0A !important;
+    }
+    body.interface-pos .dmart-led-box {
+        background: #0A0A0A !important;
+        border: 1px solid #0A0A0A !important;
+    }
+    body.interface-pos .dmart-led-label {
+        color: #A3A3A3 !important;
+    }
+    body.interface-pos .dmart-led-val {
+        color: #FFFFFF !important;
+    }
+    body.interface-pos .btn-complete-pos,
+    body.interface-pos .btn-primary,
+    body.interface-pos .btn-dark {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border: 1px solid #0A0A0A !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14) !important;
+    }
+    body.interface-pos .btn-complete-pos:hover,
+    body.interface-pos .btn-primary:hover,
+    body.interface-pos .btn-dark:hover {
+        background: #262626 !important;
+        border-color: #262626 !important;
+    }
+    body.interface-pos .settings-tab.active {
+        background: #0A0A0A !important;
+        color: #FFFFFF !important;
+        border-color: #0A0A0A !important;
+    }
+
+    /* Executive Brand Attribution Footer (Settings Panel) */
+    #view-settings.active {
+        display: flex !important;
+        flex-direction: column !important;
+        min-height: 100%;
+    }
+    .agm-settings-footer {
+        margin-top: auto;
+        padding: 18px 0 4px;
+        border-top: 1px solid #E5E5E5;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        flex-shrink: 0;
+    }
+    .agm-brand-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        padding: 6px 12px;
+        border-radius: 7px;
+        border: 1px solid #E5E5E5;
+        background: #FFFFFF;
+        color: #0A0A0A;
+        text-decoration: none;
+        font-size: 0.82rem;
+        font-weight: 500;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+    }
+    .agm-brand-link:hover {
+        border-color: #0A0A0A;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transform: translateY(-1px);
+    }
+    .agm-brand-link img {
+        height: 20px;
+        width: auto;
+        display: block;
+        object-fit: contain;
+    }
+    .agm-brand-link .agm-powered-muted {
+        color: #737373;
+        font-weight: 500;
+    }
+    .agm-brand-link .agm-brand-name {
+        color: #0A0A0A;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+    }
+    .agm-settings-meta {
+        font-size: 0.76rem;
+        color: #737373;
+    }
+
+</style>
+</head>
+<body class="interface-erp">
+
+    <!-- ENTERPRISE FAST STARTUP LOADER -->
+    <div id="startup-app-loader" aria-label="Loading">
+        <div class="loader-emblem">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+        </div>
+        <div class="loader-title" id="loader-app-title">Inventory &amp; CRM</div>
+        <div class="loader-track"><div class="loader-bar"></div></div>
+        <div id="app-sync-text" class="loader-sync-text">Connecting to database...</div>
+    </div>
+
+    <!-- SECURE PIN LOCK SCREEN (OWNER / STAFF) -->
+    <div id="pin-login-overlay">
+        <div class="pin-card">
+            <img src="/assets/app_icon.png" alt="App Icon" />
+            <h2 style="font-size:1.2rem;margin-bottom:4px;color:#0A0A0A;">Showroom Access PIN</h2>
+            <p style="font-size:0.86rem;color:#64748B;margin-bottom:16px;">Enter Owner PIN or Staff Counter PIN to unlock.</p>
+            <input type="password" id="login-pin-input" class="input mono" style="width:100%;height:40px;font-size:1.1rem;text-align:center;letter-spacing:4px;margin-bottom:10px;" placeholder="••••••" onkeydown="if(event.key==='Enter') submitPinLogin()" />
+            <div id="login-pin-error" style="color:#B91C1C;font-size:0.84rem;margin-bottom:10px;display:none;"></div>
+            <button type="button" class="btn btn-primary" style="width:100%;height:38px;font-size:0.96rem;" onclick="submitPinLogin()">Unlock Workspace</button>
+        </div>
+    </div>
+
+    <div class="app-shell">
+
+        <!-- DRAGGABLE & COLLAPSIBLE LEFT SIDEBAR -->
+        <aside id="app-sidebar" class="sidebar">
+            <div class="sidebar-top-drag">
+                <div class="sidebar-brand-box">
+                    <div class="sidebar-brand-emblem">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    </div>
+                    <span class="nav-label" style="font-size:0.86rem;font-weight:800;color:#F8FAFC;letter-spacing:0.01em;">Inventory &amp; CRM</span>
+                </div>
+                <button type="button" class="btn-collapse-sidebar" id="btn-sidebar-toggle" title="Toggle Sidebar In/Out" onclick="toggleSidebarCollapse()">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button type="button" class="nav-btn active" data-view="view-dashboard" title="Overview Dashboard" onclick="switchView('view-dashboard')">
+                    <span class="nav-btn-left">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+                        <span class="nav-label">Dashboard</span>
+                    </span>
+                </button>
+
+                <button type="button" class="nav-btn" data-view="view-inventory" title="Garment Stock (F2)" onclick="switchView('view-inventory')">
+                    <span class="nav-btn-left">
+                        <svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+                        <span class="nav-label">Garment Stock</span>
+                    </span>
+                    <span class="shortcut-tag">F2</span>
+                </button>
+
+                <button type="button" class="nav-btn" data-view="view-matrix" title="Size x Colour Matrix" onclick="switchView('view-matrix')">
+                    <span class="nav-btn-left">
+                        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+                        <span class="nav-label">Size &times; Colour Matrix</span>
+                    </span>
+                </button>
+
+                <button type="button" class="nav-btn" data-view="view-customers" title="Customers &amp; Purchase History (F3)" onclick="switchView('view-customers')">
+                    <span class="nav-btn-left">
+                        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span class="nav-label">Customers &amp; History</span>
+                    </span>
+                    <span class="shortcut-tag">F3</span>
+                </button>
+
+                <button type="button" class="nav-btn" data-view="view-settings" title="Settings" onclick="switchView('view-settings')">
+                    <span class="nav-btn-left">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                        <span class="nav-label">Settings</span>
+                    </span>
+                </button>
+            </nav>
+
+            <!-- MOUSE DRAG HANDLE TO RESIZE SIDEBAR IN & OUT -->
+            <div id="sidebar-resizer" class="sidebar-resizer" title="Drag left or right to resize menu"></div>
+        </aside>
+
+        <!-- MAIN WORKSPACE -->
+        <div class="workspace">
+
+            <!-- CLEAN SINGLE HEADER BAR (NO EXPORT/ADD SKU BUTTONS BESIDE OVERVIEW HEADING) -->
+            <header class="topbar">
+                <div style="display:flex;align-items:center;-webkit-app-region:no-drag;">
+                    <button type="button" class="erp-hamburger-btn" id="btn-erp-menu" title="Open Navigation Menu" onclick="toggleFloatingSidebar(event)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div class="topbar-title" id="topbar-title">Overview</div>
+                </div>
+                <div class="topbar-actions" id="topbar-context-actions"></div>
+            </header>
+
+            <main class="content-area">
+
+                <!-- ========================================================= -->
+                <!-- 1. DASHBOARD                                              -->
+                <!-- ========================================================= -->
+                <section id="view-dashboard" class="view-pane active">
+                                        <div class="kpi-grid">
+                        <div class="kpi-card" style="--kpi-accent:#10B981;">
+                            <div>
+                                <div class="kpi-label">Today's Billing Revenue</div>
+                                <div class="kpi-val" id="kpi-today-rev">₹0.00</div>
+                                <div class="kpi-sub" id="kpi-today-bills">0 Bills Today</div>
+                            </div>
+                            <div class="kpi-icon-tile" style="background:#ECFDF5;color:#059669;border:1px solid #A7F3D0;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </div>
+                        </div>
+                        <div class="kpi-card" style="--kpi-accent:#2563EB;">
+                            <div>
+                                <div class="kpi-label">Total Sales &amp; GST Collected</div>
+                                <div class="kpi-val" id="kpi-total-rev">₹0.00</div>
+                                <div class="kpi-sub" id="kpi-total-gst">GST: ₹0.00 (CGST + SGST)</div>
+                            </div>
+                            <div class="kpi-icon-tile" style="background:#EFF6FF;color:#2563EB;border:1px solid #BFDBFE;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                            </div>
+                        </div>
+                        <div class="kpi-card" style="--kpi-accent:#F59E0B;">
+                            <div>
+                                <div class="kpi-label">Garment Stock Valuation</div>
+                                <div class="kpi-val" id="kpi-stock-val">₹0.00</div>
+                                <div class="kpi-sub" id="kpi-stock-units">0 Units across 0 SKUs</div>
+                            </div>
+                            <div class="kpi-icon-tile" style="background:#FFFBEB;color:#D97706;border:1px solid #FDE68A;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                            </div>
+                        </div>
+                        <div class="kpi-card" style="--kpi-accent:#8B5CF6;">
+                            <div>
+                                <div class="kpi-label">Registered Customers</div>
+                                <div class="kpi-val" id="kpi-cust-count">0</div>
+                                <div class="kpi-sub" id="kpi-low-stock">0 Low-Stock Alerts</div>
+                            </div>
+                            <div class="kpi-icon-tile" style="background:#F5F3FF;color:#7C3AED;border:1px solid #DDD6FE;">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            </div>
+                        </div>
+                    </div>
+
+                                        <div style="display:grid;grid-template-columns:1.25fr 0.75fr;gap:12px;height:calc(100vh - 172px);">
+                        <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
+                            <!-- DYNAMIC SALES TREND & 30-DAY PREDICTION CHART -->
+                            <div class="panel" style="height:240px;flex-shrink:0;">
+                                <div class="panel-header">
+                                    <span>Sales Velocity &amp; 30-Day Revenue Prediction (Offline BI Engine)</span>
+                                    <div style="display:flex;align-items:center;gap:8px;">
+                                        <span id="bi-trend-badge" class="badge badge-blue">Calculating...</span>
+                                        <span id="bi-forecast-30d" class="mono" style="font-size:0.82rem;font-weight:700;color:#0A0A0A;">Est. 30D: ₹0</span>
+                                    </div>
+                                </div>
+                                <div style="padding:10px 14px;height:192px;position:relative;">
+                                    <canvas id="chart-sales-forecast"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- RECENT BILLS -->
+                            <div class="panel" style="flex:1;min-height:0;">
+                                <div class="panel-header">
+                                    <span>Recent Bills &amp; Thermal Receipts</span>
+                                    <button type="button" class="btn btn-xs" onclick="refreshAll()">Refresh</button>
+                                </div>
+                                <div class="table-wrap">
+                                    <table class="data-grid">
+                                        <thead>
+                                            <tr>
+                                                <th>Bill No</th>
+                                                <th>Date &amp; Time</th>
+                                                <th>Customer Name &amp; Phone</th>
+                                                <th>Mode</th>
+                                                <th class="text-right">GST (₹)</th>
+                                                <th class="text-right">Total (₹)</th>
+                                                <th class="text-center">Receipt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dash-bills-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex;flex-direction:column;gap:12px;min-height:0;">
+                            <div class="panel" style="flex:1;min-height:0;">
+                                <div class="panel-header"><span>Category Stock Summary</span></div>
+                                <div class="table-wrap">
+                                    <table class="data-grid">
+                                        <thead>
+                                            <tr>
+                                                <th>Category</th>
+                                                <th class="text-center">SKUs</th>
+                                                <th class="text-center">Units</th>
+                                                <th class="text-right">Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dash-cat-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="panel" style="flex:1;min-height:0;">
+                                <div class="panel-header"><span>Stock-Out Prediction &amp; Restock Queue</span></div>
+                                <div class="table-wrap">
+                                    <table class="data-grid">
+                                        <thead>
+                                            <tr>
+                                                <th>SKU</th>
+                                                <th>Garment</th>
+                                                <th class="text-center">Left / Forecast</th>
+                                                <th class="text-right">Restock</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="dash-low-tbody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                                                <!-- ========================================================= -->
+                <!-- 3. GARMENT INVENTORY (8-COLUMN MONOCHROME VIEW)           -->
+                <!-- ========================================================= -->
+                <section id="view-inventory" class="view-pane">
+                    <div class="panel" style="height:calc(100vh - 74px);">
+                        <div class="panel-header" style="height:54px;gap:10px;">
+                            <div style="display:flex;gap:8px;flex:1;align-items:center;">
+                                <div class="mono-search-wrap">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="inv-query" class="input" placeholder="Search SKU, Garment Name, Colour, Rack..." oninput="renderInventoryGrid()" />
+                                </div>
+                                <select id="inv-cat" class="select" onchange="renderInventoryGrid()">
+                                    <option value="ALL">All Categories</option>
+                                    <option value="Handwork Sherwani">Handwork Sherwani</option>
+                                    <option value="Plain Sherwani">Plain Sherwani</option>
+                                    <option value="Kurta Pyjama">Kurta Pyjama</option>
+                                    <option value="Pathani">Pathani</option>
+                                    <option value="Jodhpuri">Jodhpuri</option>
+                                    <option value="Tobh">Tobh</option>
+                                    <option value="Handwork Suits">Handwork Suits</option>
+                                    <option value="Plain Suits">Plain Suits</option>
+                                    <option value="Jooti">Jooti</option>
+                                    <option value="Pagdi">Pagdi</option>
+                                    <option value="Sadiri">Sadiri</option>
+                                    <option value="Kids Wear">Kids Wear</option>
+                                </select>
+                                <select id="inv-status" class="select" onchange="renderInventoryGrid()">
+                                    <option value="ALL">All Stock Status</option>
+                                    <option value="OK">In Stock</option>
+                                    <option value="LOW">Low / Out of Stock</option>
+                                </select>
+                            </div>
+                            <div style="display:flex;gap:8px;">
+                                <button type="button" class="btn" onclick="exportReport('garments')">Export CSV</button>
+                                <button type="button" class="btn" onclick="switchView('view-matrix')">Variant Matrix</button>
+                                <button type="button" class="btn btn-primary" onclick="openGarmentModal()">+ Add Garment</button>
+                            </div>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="data-grid">
+                                <thead>
+                                    <tr>
+                                        <th>SKU &amp; Barcode</th>
+                                        <th>Garment &amp; Details</th>
+                                        <th>Variant</th>
+                                        <th class="text-right">Price &amp; Tax (₹)</th>
+                                        <th class="text-center">Stock</th>
+                                        <th class="text-center">Sold</th>
+                                        <th class="text-center">Adjust</th>
+                                        <th class="text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inv-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================================= -->
+                <!-- 4. SIZE x COLOUR MATRIX GENERATOR                         -->
+                <!-- ========================================================= -->
+                <section id="view-matrix" class="view-pane">
+                    <div class="panel" style="max-width:840px;">
+                        <div class="panel-header"><span>Bulk Size &times; Colour Garment Matrix Generator</span></div>
+                        <div style="padding:16px;">
+                            <div class="form-grid-3">
+                                <div class="field" style="grid-column:span 2;">
+                                    <label>Garment Title / Style Name *</label>
+                                    <input type="text" id="mat-name" class="input" placeholder="e.g. Zardozi Handwork Silk Sherwani" />
+                                </div>
+                                <div class="field">
+                                    <label>SKU Prefix *</label>
+                                    <input type="text" id="mat-prefix" class="input mono" value="SKU-SHW" />
+                                </div>
+                                <div class="field">
+                                    <label>Category</label>
+                                    <select id="mat-category" class="select" onchange="autoFillHsnFromCategory('mat-category', 'mat-hsn')">
+                                        <option value="Handwork Sherwani">Handwork Sherwani</option>
+                                        <option value="Plain Sherwani">Plain Sherwani</option>
+                                        <option value="Kurta Pyjama">Kurta Pyjama</option>
+                                        <option value="Pathani">Pathani</option>
+                                        <option value="Jodhpuri">Jodhpuri</option>
+                                        <option value="Tobh">Tobh</option>
+                                        <option value="Handwork Suits">Handwork Suits</option>
+                                        <option value="Plain Suits">Plain Suits</option>
+                                        <option value="Jooti">Jooti</option>
+                                        <option value="Pagdi">Pagdi</option>
+                                        <option value="Sadiri">Sadiri</option>
+                                        <option value="Kids Wear">Kids Wear</option>
+                                    </select>
+                                </div>
+                                <div class="field">
+                                    <label>Rack / Shelf Location</label>
+                                    <input type="text" id="mat-rack" class="input mono" value="RACK-A1" />
+                                </div>
+                                <div class="field">
+                                    <label>HSN Code</label>
+                                    <input type="text" id="mat-hsn" class="input mono" value="6203" />
+                                </div>
+                                <div class="field">
+                                    <label>Cost Price (₹)</label>
+                                    <input type="number" id="mat-cost" class="input mono" value="6000" />
+                                </div>
+                                <div class="field">
+                                    <label>Selling Price (₹) *</label>
+                                    <input type="number" id="mat-price" class="input mono" value="12500" />
+                                </div>
+                                <div class="field">
+                                    <label>Opening Stock (Per Variant)</label>
+                                    <input type="number" id="mat-qty" class="input mono" value="4" />
+                                </div>
+                            </div>
+
+                            <div class="field" style="margin-top:14px;">
+                                <label>Sizes to Generate</label>
+                                <div style="display:flex;flex-wrap:wrap;gap:6px;" id="mat-sizes">
+                                    <label class="btn"><input type="checkbox" value="36" /> 36</label>
+                                    <label class="btn"><input type="checkbox" value="38" checked /> 38</label>
+                                    <label class="btn"><input type="checkbox" value="40" checked /> 40</label>
+                                    <label class="btn"><input type="checkbox" value="42" checked /> 42</label>
+                                    <label class="btn"><input type="checkbox" value="44" checked /> 44</label>
+                                    <label class="btn"><input type="checkbox" value="46" /> 46</label>
+                                    <label class="btn"><input type="checkbox" value="26" /> Kids 26</label>
+                                    <label class="btn"><input type="checkbox" value="28" /> Kids 28</label>
+                                    <label class="btn"><input type="checkbox" value="30" /> Kids 30</label>
+                                </div>
+                            </div>
+
+                            <div class="field" style="margin-top:14px;">
+                                <label>Colours to Generate</label>
+                                <div style="display:flex;flex-wrap:wrap;gap:6px;" id="mat-colours">
+                                    <label class="btn"><input type="checkbox" value="Ivory" checked /> Ivory</label>
+                                    <label class="btn"><input type="checkbox" value="Gold" checked /> Gold</label>
+                                    <label class="btn"><input type="checkbox" value="Maroon" /> Maroon</label>
+                                    <label class="btn"><input type="checkbox" value="Navy Blue" /> Navy Blue</label>
+                                    <label class="btn"><input type="checkbox" value="Emerald" /> Emerald</label>
+                                    <label class="btn"><input type="checkbox" value="Black" /> Black</label>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:18px;display:flex;justify-content:flex-end;">
+                                <button type="button" class="btn btn-primary" onclick="submitMatrix()">Generate All Variants into Inventory</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ========================================================= -->
+                <!-- 5. CUSTOMERS & COMPLETE PURCHASE HISTORY (100,000+ SCALE) -->
+                <!-- ========================================================= -->
+                <section id="view-customers" class="view-pane">
+                    <div class="customers-split">
+                        <div class="panel">
+                            <div class="panel-header" style="height:44px;gap:8px;">
+                                <input type="text" id="cust-search-input" class="input" style="flex:1;" placeholder="Search 100,000+ Customers by Mobile, Name, Code, or City..." oninput="searchCustomers(1)" />
+                                <select id="cust-sort-select" class="select" onchange="searchCustomers(1)">
+                                    <option value="recent">Sort: Recent Purchase</option>
+                                    <option value="spent">Sort: Highest Spend</option>
+                                    <option value="visits">Sort: Most Visits</option>
+                                    <option value="name">Sort: Name (A-Z)</option>
+                                </select>
+                                <button type="button" class="btn" onclick="exportReport('customers')">Export CSV</button>
+                                <button type="button" class="btn btn-primary" onclick="openCustomerModal()">+ New Customer</button>
+                            </div>
+
+                            <div class="table-wrap">
+                                <table class="data-grid">
+                                    <thead>
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Customer Name</th>
+                                            <th>Mobile Number</th>
+                                            <th>City</th>
+                                            <th class="text-center">Visits</th>
+                                            <th class="text-center">Items</th>
+                                            <th class="text-right">Lifetime Spend</th>
+                                            <th>Last Visit</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="cust-directory-tbody"></tbody>
+                                </table>
+                            </div>
+
+                            <div style="height:36px;padding:0 12px;background:#F8FAFC;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:0.88rem;">
+                                <span id="cust-pagination-info">Showing 0 of 0 Customers</span>
+                                <div style="display:flex;gap:6px;">
+                                    <button type="button" class="btn btn-xs" id="btn-cust-prev" onclick="changeCustomerPage(-1)">Prev</button>
+                                    <button type="button" class="btn btn-xs" id="btn-cust-next" onclick="changeCustomerPage(1)">Next</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <span id="cust-detail-header">Customer Profile &amp; Purchase History</span>
+                                <button type="button" class="btn btn-xs" id="btn-edit-selected-cust" style="display:none;" onclick="editSelectedCustomer()">Edit Profile</button>
+                            </div>
+                            <div id="cust-detail-body" style="padding:14px;overflow-y:auto;flex:1;">
+                                <div style="text-align:center;color:var(--text-muted);padding:40px 16px;">
+                                    Select any customer on the left (or bill a customer with their mobile number) to inspect their complete profile, lifetime bills, and every garment purchased.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                                <!-- ========================================================= -->
+                <!-- 6. BUSINESS SETTINGS, SOCIAL MEDIA HUB & VERCEL SYNC       -->
+                <!-- ========================================================= -->
+                <section id="view-settings" class="view-pane">
+                    <div class="settings-tabs">
+                        <button type="button" class="settings-tab active" data-stab="stab-general" onclick="switchSettingsTab('stab-general')">Business &amp; Customizations</button>
+                        <button type="button" class="settings-tab" data-stab="stab-social" onclick="switchSettingsTab('stab-social')">Social Media &amp; Campaigns</button>
+                        <button type="button" class="settings-tab" data-stab="stab-cloud" onclick="switchSettingsTab('stab-cloud')">Online Dashboard (Vercel)</button>
+                    </div>
+
+                    <!-- TAB 1: BUSINESS & INVENTORY CUSTOMIZATIONS -->
+                    <div id="stab-general" class="settings-tab-pane active">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="panel">
+                                <div class="panel-header"><span>Application Typography &amp; Display</span></div>
+                                <div style="padding:14px;">
+                                    <div class="form-grid-3">
+                                        <div class="field" style="grid-column:span 2;">
+                                            <label>Font Family / Typography Style</label>
+                                            <select id="ui-font-family" class="select" onchange="applyTypographySettings()">
+                                                <option value='"Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif'>Modern System Sans (Segoe UI)</option>
+                                                <option value='"Calibri", "Aptos", "Segoe UI", sans-serif'>Clean Geometric Sans (Calibri / Aptos)</option>
+                                                <option value='Georgia, "Times New Roman", serif'>Editorial Classic Serif (Georgia)</option>
+                                                <option value='"Consolas", "Cascadia Mono", monospace'>Technical Monospace (Consolas)</option>
+                                            </select>
+                                        </div>
+                                        <div class="field">
+                                            <label>Base Font Size: <span id="lbl-font-px" class="mono">13px</span></label>
+                                            <input type="range" id="ui-font-size" min="11" max="18" step="0.5" value="13" style="height:31px;cursor:pointer;" oninput="applyTypographySettings()" />
+                                        </div>
+                                    </div>
+                                    <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                            <button type="button" class="btn btn-xs" onclick="setFontSizePreset(12)">Small (12px)</button>
+                                            <button type="button" class="btn btn-xs" onclick="setFontSizePreset(13)">Default (13px)</button>
+                                            <button type="button" class="btn btn-xs" onclick="setFontSizePreset(14.5)">Large (14.5px)</button>
+                                            <button type="button" class="btn btn-xs" onclick="setFontSizePreset(16)">Extra Large (16px)</button>
+                                        </div>
+                                        <button type="button" class="btn btn-xs" onclick="resetTypographySettings()">Reset Default</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <div class="panel-header"><span>Inventory Rules, VIP CRM &amp; Data Backup</span></div>
+                                <div style="padding:14px;">
+                                    <div class="form-grid-3">
+                                        <div class="field">
+                                            <label>VIP Customer Threshold (₹)</label>
+                                            <input type="number" id="biz-vip-threshold" class="input mono" value="25000" step="1000" />
+                                        </div>
+                                        <div class="field">
+                                            <label>Default Low-Stock Alert Qty</label>
+                                            <input type="number" id="biz-low-stock-default" class="input mono" value="3" min="1" />
+                                        </div>
+                                        <div class="field">
+                                            <label>Auto-HSN Garment Default</label>
+                                            <input type="text" id="biz-default-hsn" class="input mono" value="6203" />
+                                        </div>
+                                    </div>
+                                    <div style="margin-top:14px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                            <button type="button" class="btn" onclick="exportReport('garments')">Export Inventory CSV</button>
+                                            <button type="button" class="btn" onclick="exportReport('customers')">Export Customers CSV</button>
+                                            <button type="button" id="btn-settings-backup" class="btn" onclick="runBackup()">Backup Database</button>
+                                        </div>
+                                        <button type="button" class="btn btn-primary" onclick="saveBusinessCustomizations()">Save Customizations</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: SOCIAL MEDIA HUB & FESTIVE CAMPAIGNS -->
+                    <div id="stab-social" class="settings-tab-pane">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                            <div class="panel">
+                                <div class="panel-header"><span>Connected Showroom Social Media Channels</span></div>
+                                <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                                    <div class="field">
+                                        <label>Instagram Handle / URL</label>
+                                        <div style="display:flex;gap:6px;">
+                                            <input type="text" id="soc-instagram" class="input" placeholder="https://instagram.com/your_showroom" style="flex:1;" />
+                                            <button type="button" class="btn" onclick="openSocialLink('soc-instagram')">Open</button>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label>Facebook Page URL</label>
+                                        <div style="display:flex;gap:6px;">
+                                            <input type="text" id="soc-facebook" class="input" placeholder="https://facebook.com/your_showroom" style="flex:1;" />
+                                            <button type="button" class="btn" onclick="openSocialLink('soc-facebook')">Open</button>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label>Google Business / Maps Reviews Link</label>
+                                        <div style="display:flex;gap:6px;">
+                                            <input type="text" id="soc-google" class="input" placeholder="https://g.page/r/..." style="flex:1;" />
+                                            <button type="button" class="btn" onclick="openSocialLink('soc-google')">Open</button>
+                                        </div>
+                                    </div>
+                                    <div class="field">
+                                        <label>YouTube / Catalog Reel Link</label>
+                                        <div style="display:flex;gap:6px;">
+                                            <input type="text" id="soc-youtube" class="input" placeholder="https://youtube.com/@..." style="flex:1;" />
+                                            <button type="button" class="btn" onclick="openSocialLink('soc-youtube')">Open</button>
+                                        </div>
+                                    </div>
+                                    <div style="display:flex;justify-content:flex-end;">
+                                        <button type="button" class="btn btn-primary" onclick="saveSocialLinks()">Save Social Links</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <div class="panel-header"><span>1-Click Festive Campaign Post Generator</span></div>
+                                <div style="padding:14px;display:flex;flex-direction:column;gap:10px;">
+                                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                        <button type="button" class="btn btn-xs" onclick="loadCampaignTemplate('wedding')">Wedding Season</button>
+                                        <button type="button" class="btn btn-xs" onclick="loadCampaignTemplate('eid')">Eid Collection</button>
+                                        <button type="button" class="btn btn-xs" onclick="loadCampaignTemplate('diwali')">Diwali Festive</button>
+                                        <button type="button" class="btn btn-xs" onclick="loadCampaignTemplate('new')">New Arrivals</button>
+                                    </div>
+                                    <textarea id="soc-campaign-text" class="textarea" style="min-height:130px;" placeholder="Select a festive template above to generate an instant caption for Instagram, WhatsApp Status &amp; Facebook..."></textarea>
+                                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                                        <button type="button" class="btn" onclick="copyCampaignPost()">Copy Caption</button>
+                                        <button type="button" class="btn btn-primary" onclick="shareCampaignWhatsApp()">Share on WhatsApp</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: ONLINE OWNER DASHBOARD (VERCEL SYNC) -->
+                    <div id="stab-cloud" class="settings-tab-pane">
+
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;">
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <span>Primary Database (Active)</span>
+                                    <span id="db-prim-badge" class="badge badge-amber">Checking...</span>
+                                </div>
+                                <div style="padding:14px;">
+                                    <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
+                                        <span>Storage Used: <strong id="db-prim-size" class="mono">0 MB</strong></span>
+                                        <span>Latency: <strong id="db-prim-lat" class="mono">—</strong></span>
+                                    </div>
+                                    <div class="db-meter-track"><div id="db-prim-bar" class="db-meter-fill" style="width:0%;"></div></div>
+                                    <div id="db-prim-counts" style="font-size:0.84rem;color:var(--text-secondary);margin-top:6px;">—</div>
+                                </div>
+                            </div>
+
+                            <div class="panel">
+                                <div class="panel-header">
+                                    <span>Secondary Database (Failover + Excess Archive)</span>
+                                    <span id="db-sec-badge" class="badge badge-amber">Checking...</span>
+                                </div>
+                                <div style="padding:14px;">
+                                    <div style="display:flex;justify-content:space-between;font-size:0.88rem;">
+                                        <span>Storage Used: <strong id="db-sec-size" class="mono">0 MB</strong></span>
+                                        <span>Latency: <strong id="db-sec-lat" class="mono">—</strong></span>
+                                    </div>
+                                    <div class="db-meter-track"><div id="db-sec-bar" class="db-meter-fill" style="width:0%;background:#15803D;"></div></div>
+                                    <div id="db-sec-counts" style="font-size:0.84rem;color:var(--text-secondary);margin-top:6px;">—</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel">
+                            <div class="panel-header">
+                                <span>Dual-Database Operations (Mirror &amp; Excess Overflow Archive)</span>
+                                <button type="button" class="btn btn-xs" onclick="refreshAll()">Refresh Health</button>
+                            </div>
+                            <div style="padding:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+                                <div style="font-size:0.9rem;color:var(--text-secondary);max-width:560px;">
+                                    Every bill, customer, and garment edit is written to <strong>Primary DB</strong> and automatically mirrored to <strong>Secondary DB</strong>. If Primary goes offline, reads and writes automatically fail over to Secondary. When Primary nears capacity, archive older bills to Secondary — customer purchase history automatically merges both databases.
+                                </div>
+                                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                    <button type="button" id="btn-sync-sec" class="btn btn-primary" onclick="runSyncSecondary()">Mirror Primary &rarr; Secondary</button>
+                                    <select id="archive-days" class="select" style="width:140px;">
+                                        <option value="90">Older than 90 Days</option>
+                                        <option value="180">Older than 180 Days</option>
+                                        <option value="365">Older than 1 Year</option>
+                                    </select>
+                                    <button type="button" id="btn-archive-sec" class="btn btn-dark" onclick="runArchiveExcess()">Archive Excess to Secondary</button>
+                                </div>
+                            </div>
+                        </div>
+                    
+                    </div>
+
+                    <footer class="agm-settings-footer">
+                        <a href="https://alif-growth-media.vercel.app/" target="_blank" rel="noopener noreferrer" class="agm-brand-link" title="Visit Alif Growth Media">
+                            <img src="/assets/alif-growth-media-logo.png" alt="Alif Growth Media" />
+                            <span><span class="agm-powered-muted">Powered by</span> <strong class="agm-brand-name">Alif Growth Media</strong></span>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7"/><polyline points="7 7 17 7 17 17"/></svg>
+                        </a>
+                        <span class="agm-settings-meta">Business Infrastructure &amp; Billing Systems</span>
+                    </footer>
+                </section>
+
+</main>
+        </div>
+
+    </div>
+
+    <!-- MODAL 1: ADD / EDIT GARMENT SKU -->
+    <div id="modal-garment" class="modal-bg">
+        <div class="modal-box">
+            <div class="panel-header">
+                <span id="modal-garment-title">Add / Edit Garment SKU</span>
+                <button type="button" class="btn btn-xs" onclick="closeModal('modal-garment')">Close</button>
+            </div>
+            <div style="padding:16px;">
+                <input type="hidden" id="g-id" />
+                <div class="form-grid-3">
+                    <div class="field">
+                        <label>SKU Code *</label>
+                        <input type="text" id="g-sku" class="input mono" />
+                    </div>
+                    <div class="field">
+                        <label>Barcode *</label>
+                        <input type="text" id="g-barcode" class="input mono" />
+                    </div>
+                    <div class="field">
+                        <label>Category</label>
+                        <select id="g-category" class="select" onchange="autoFillHsnFromCategory('g-category', 'g-hsn')">
+                            <option value="Handwork Sherwani">Handwork Sherwani</option>
+                            <option value="Plain Sherwani">Plain Sherwani</option>
+                            <option value="Kurta Pyjama">Kurta Pyjama</option>
+                            <option value="Pathani">Pathani</option>
+                            <option value="Jodhpuri">Jodhpuri</option>
+                            <option value="Tobh">Tobh</option>
+                            <option value="Handwork Suits">Handwork Suits</option>
+                            <option value="Plain Suits">Plain Suits</option>
+                            <option value="Jooti">Jooti</option>
+                            <option value="Pagdi">Pagdi</option>
+                            <option value="Sadiri">Sadiri</option>
+                            <option value="Kids Wear">Kids Wear</option>
+                        </select>
+                    </div>
+                    <div class="field" style="grid-column:span 2;">
+                        <label>Garment Name *</label>
+                        <input type="text" id="g-name" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Rack / Shelf</label>
+                        <input type="text" id="g-rack" class="input mono" value="RACK-A1" />
+                    </div>
+                    <div class="field">
+                        <label>Size</label>
+                        <input type="text" id="g-size" class="input mono" value="40" />
+                    </div>
+                    <div class="field">
+                        <label>Colour</label>
+                        <input type="text" id="g-colour" class="input" value="Ivory" />
+                    </div>
+                    <div class="field">
+                        <label>Fabric Type</label>
+                        <input type="text" id="g-fabric" class="input" placeholder="e.g. Raw Silk" />
+                    </div>
+                    <div class="field">
+                        <label>Cost Price (₹)</label>
+                        <input type="number" id="g-cost" class="input mono" value="0" />
+                    </div>
+                    <div class="field">
+                        <label>Selling Price (₹) *</label>
+                        <input type="number" id="g-price" class="input mono" value="0" />
+                    </div>
+                    <div class="field">
+                        <label>Stock Qty *</label>
+                        <input type="number" id="g-stock" class="input mono" value="5" />
+                    </div>
+                    <div class="field">
+                        <label>Min Stock Alert</label>
+                        <input type="number" id="g-alert" class="input mono" value="2" />
+                    </div>
+                    <div class="field">
+                        <label>HSN Code</label>
+                        <input type="text" id="g-hsn" class="input mono" value="6203" />
+                    </div>
+                </div>
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
+                    <button type="button" class="btn" onclick="closeModal('modal-garment')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveGarmentForm()">Save Garment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ADD / EDIT CUSTOMER PROFILE -->
+    <div id="modal-customer" class="modal-bg">
+        <div class="modal-box" style="width:500px;">
+            <div class="panel-header">
+                <span id="modal-customer-title">Customer Profile</span>
+                <button type="button" class="btn btn-xs" onclick="closeModal('modal-customer')">Close</button>
+            </div>
+            <div style="padding:16px;">
+                <input type="hidden" id="c-id" />
+                <div class="form-grid-3">
+                    <div class="field" style="grid-column:span 2;">
+                        <label>Full Name *</label>
+                        <input type="text" id="c-name" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Mobile Number *</label>
+                        <input type="text" id="c-phone" class="input mono" />
+                    </div>
+                    <div class="field">
+                        <label>City / Area</label>
+                        <input type="text" id="c-city" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Email</label>
+                        <input type="text" id="c-email" class="input" />
+                    </div>
+                    <div class="field">
+                        <label>Customer GSTIN</label>
+                        <input type="text" id="c-gstin" class="input mono" />
+                    </div>
+                    <div class="field" style="grid-column:span 3;">
+                        <label>Full Address</label>
+                        <input type="text" id="c-address" class="input" />
+                    </div>
+                    <div class="field" style="grid-column:span 3;">
+                        <label>Notes / Preferences</label>
+                        <input type="text" id="c-notes" class="input" />
+                    </div>
+                </div>
+                <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:8px;">
+                    <button type="button" class="btn" onclick="closeModal('modal-customer')">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="saveCustomerForm()">Save Customer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- MODAL: HELD / PARKED BILLS (POS TERMINAL) -->
+    <div id="modal-held-carts" class="modal-bg">
+        <div class="modal-box" style="width:680px;max-width:95vw;">
+            <div class="panel-header">
+                <span>Parked / Held Customer Bills</span>
+                <button type="button" class="btn btn-xs" onclick="closeModal('modal-held-carts')">Close</button>
+            </div>
+            <div style="padding:14px;">
+                <div class="table-wrap" style="max-height:380px;">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Held Time</th>
+                                <th>Customer</th>
+                                <th class="text-center">Items</th>
+                                <th class="text-right">Est. Total</th>
+                                <th class="text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="held-carts-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: RECENT BILLS & REPRINT (POS TERMINAL) -->
+    <div id="modal-recent-bills" class="modal-bg">
+        <div class="modal-box" style="width:920px;max-width:96vw;">
+            <div class="panel-header">
+                <span>Recent Bills &amp; Thermal Receipt Reprint</span>
+                <button type="button" class="btn btn-xs" onclick="closeModal('modal-recent-bills')">Close</button>
+            </div>
+            <div style="padding:14px;">
+                <div class="table-wrap" style="max-height:460px;">
+                    <table class="data-grid">
+                        <thead>
+                            <tr>
+                                <th>Bill No</th>
+                                <th>Date &amp; Time</th>
+                                <th>Customer Name &amp; Phone</th>
+                                <th>Mode</th>
+                                <th class="text-right">GST (₹)</th>
+                                <th class="text-right">Total (₹)</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pos-recent-bills-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: THERMAL RECEIPT PREVIEW (FOR BACK-OFFICE ERP SUITE) -->
+    <div id="modal-erp-receipt" class="modal-bg">
+        <div class="modal-box" style="width:420px;max-width:95vw;">
+            <div class="panel-header">
+                <span>Thermal Receipt Preview</span>
+                <div style="display:flex;gap:6px;">
+                    <button type="button" class="btn btn-xs" onclick="saveCurrentReceiptPdf()">PDF</button>
+                    <button type="button" class="btn btn-xs btn-dark" onclick="triggerThermalPrint()">Print</button>
+                    <button type="button" class="btn btn-xs" onclick="closeModal('modal-erp-receipt')">Close</button>
+                </div>
+            </div>
+            <div class="thermal-container" style="max-height:78vh;overflow-y:auto;padding:16px;">
+                <div id="erp-receipt-paper-host"></div>
+            </div>
+        </div>
+    </div>
+
+<script>window.APP_INTERFACE = "erp";</script>
+<script src="vendor/chart.umd.min.js"></script>
+<script src="vendor/JsBarcode.all.min.js"></script>
+<script src="app.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(() => {});
+    });
+}
+</script>
+</body>
+</html>

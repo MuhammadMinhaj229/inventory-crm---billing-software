@@ -1,0 +1,18 @@
+{
+  "name": "Showroom Inventory & CRM",
+  "short_name": "Inventory CRM",
+  "description": "Showroom Inventory, Matrix, 100k Customer History & Business Intelligence — Powered by Alif Growth Media",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0A0A0A",
+  "theme_color": "#FFFFFF",
+  "icons": [
+    {
+      "src": "/assets/erp_icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

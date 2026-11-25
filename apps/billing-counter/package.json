@@ -1,0 +1,12 @@
+{
+  "name": "agm-billing-counter",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Billing Counter POS & Thermal Receipt Suite — Powered by Alif Growth Media",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}

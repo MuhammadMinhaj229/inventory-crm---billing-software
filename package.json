@@ -1,0 +1,18 @@
+{
+  "name": "agm-inventory-crm-billing-suite",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Dual-Product Vercel + Dual PostgreSQL Suite (apps/inventory-crm + apps/billing-counter) — Powered by Alif Growth Media",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "migrate": "node database/migrate.js",
+    "migrate:status": "node database/migrate.js --status",
+    "sync:backend": "node scripts/sync-shared-backend.js",
+    "verify": "node scripts/verify-production.js"
+  },
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
